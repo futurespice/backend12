@@ -489,7 +489,7 @@ class UpdateItemSerializer(serializers.ModelSerializer):
     UpdateItem serializer.
     """
 
-    composition = CompositionSerializer(many=True)
+    compositions = CompositionSerializer(many=True)
 
     class Meta:
         model = Item
@@ -500,19 +500,21 @@ class UpdateItemSerializer(serializers.ModelSerializer):
             "description",
             "price",
             "image",
-            "composition",
+            "compositions",
             "is_available",
         ]
 
     def update(self, instance, validated_data):
         """
-        Update item and composition of item.
+        Update item and compositions of item.
         """
-        composition_data = validated_data.pop("composition", [])
+        composition_data = validated_data.pop("compositions", [])
         instance = super().update(instance, validated_data)
 
-        instance.composition.all().delete()
+        # Delete old compositions
+        Composition.objects.filter(item=instance).delete()
 
+        # Create new compositions
         for composition in composition_data:
             Composition.objects.create(item=instance, **composition)
 

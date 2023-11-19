@@ -11,7 +11,8 @@ from apps.storage.views import (CreateCategoryView, CreateEmployeeView,
                                 ItemListView, ItemUpdateView, ListCategoryView,
                                 PutImageToItemView, ReadyMadeProductCreateView,
                                 ReadyMadeProductListView, ScheduleUpdateView,
-                                UpdateCategoryView, UpdateIngredientView)
+                                UpdateCategoryView, UpdateIngredientView,
+                                ItemDestroyView,)
 
 urlpatterns = [
     path("categories/", ListCategoryView.as_view()),  # storage/categories/
@@ -67,6 +68,9 @@ urlpatterns = [
     path(
         "items/update/<int:pk>/", ItemUpdateView.as_view()
     ),  # storage/items/update/<int:pk>/
+    path(
+        "items/destroy/<int:pk>/", ItemDestroyView.as_view()
+    ),  # storage/items/destroy/<int:pk>/
     path(
         "ready-made-products/create/", ReadyMadeProductCreateView.as_view()
     ),  # storage/ready-made-products/create/
