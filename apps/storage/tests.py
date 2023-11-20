@@ -8,7 +8,7 @@ from apps.accounts.models import CustomUser as User
 from apps.accounts.models import EmployeeSchedule, EmployeeWorkdays
 from apps.branches.models import Branch, Schedule, Workdays
 from apps.storage.models import (AvailableAtTheBranch, Category, Ingredient,
-                                 Item, ReadyMadeProduct)
+                                 Item, ReadyMadeProduct, Composition)
 
 # ==================== Category Tests ==================== #
 
@@ -839,3 +839,248 @@ class IngredientViewTest(TestCase):
                 ingredient__name=ingredient_name
             ).exists()
         )
+
+
+# ==================== Item Tests ==================== #
+# Item Model Tests
+class ItemModelTest(TestCase):
+    """Test Item model"""
+
+    @classmethod
+    def setUpTestData(cls):
+        # Set up non-modified objects used by all test methods
+        cls.category = Category.objects.create(name="Test Category")
+        cls.item = Item.objects.create(
+            name="Test Item",
+            category=cls.category,
+            price=100,
+        )
+
+    def test_name_label(self):
+        """Test name label"""
+        item = Item.objects.get(id=1)
+        field_label = item._meta.get_field("name").verbose_name
+        self.assertEquals(field_label, "name")
+
+    def test_name_max_length(self):
+        item = Item.objects.get(id=1)
+        """Test name max length. Check if it is equal to 255"""
+        max_length = item._meta.get_field("name").max_length
+        self.assertEquals(max_length, 255)
+
+    def test_object_name_is_name(self):
+        """Test object name. Check if it is equal to name"""
+        item = Item.objects.get(id=1)
+        expected_object_name = item.name
+        self.assertEquals(expected_object_name, str(item))
+
+    def test_category_label(self):
+        """Test category label. Check if it is equal to category"""
+        item = Item.objects.get(id=1)
+        field_label = item._meta.get_field("category").verbose_name
+        self.assertEquals(field_label, "category")
+
+    def test_price_label(self):
+        """Test price label. Check if it is equal to price"""
+        item = Item.objects.get(id=1)
+        field_label = item._meta.get_field("price").verbose_name
+        self.assertEquals(field_label, "price")
+
+    def test_price_max_digits(self):
+        """Test price max digits. Check if it is equal to 10"""
+        item = Item.objects.get(id=1)
+        max_digits = item._meta.get_field("price").max_digits
+        self.assertEquals(max_digits, 10)
+
+    def test_price_decimal_places(self):
+        """Test price decimal places. Check if it is equal to 2"""
+        item = Item.objects.get(id=1)
+        decimal_places = item._meta.get_field("price").decimal_places
+        self.assertEquals(decimal_places, 2)
+
+    def test_image_label(self):
+        """Test image label. Check if it is equal to image"""
+        item = Item.objects.get(id=1)
+        field_label = item._meta.get_field("image").verbose_name
+        self.assertEquals(field_label, "image")
+
+    def test_image_upload_to(self):
+        """Test image upload to. Check if it is equal to images"""
+        item = Item.objects.get(id=1)
+        upload_to = item._meta.get_field("image").upload_to
+        self.assertEquals(upload_to, "images")
+
+    def test_is_available_label(self):
+        """Test is_available label. Check if it is equal to is available"""
+        item = Item.objects.get(id=1)
+        field_label = item._meta.get_field("is_available").verbose_name
+        self.assertEquals(field_label, "is available")
+
+    def test_is_available_default(self):
+        """Test is_available default. Check if it is equal to True"""
+        item = Item.objects.get(id=1)
+        default = item._meta.get_field("is_available").default
+        self.assertTrue(default)
+
+
+# Item View Tests
+class ItemViewTest(TestCase):
+    """Test Item endpoints"""
+
+    @classmethod
+    def setUpTestData(cls):
+        # Common test data for all methods
+        cls.user = User.objects.create(
+            first_name="test",
+            last_name="user",
+            phone_number="+996700000000",
+            username="testuser",
+            password="testpassword",
+            is_active=True,
+        )
+        cls.admin_user = User.objects.create(
+            first_name="test",
+            last_name="admin",
+            phone_number="+996700000001",
+            username="testadmin",
+            password="testpassword",
+            is_active=True,
+            is_staff=True,
+            is_superuser=True,
+        )
+        cls.category = Category.objects.create(name="Test Category")
+        cls.item = Item.objects.create(
+            name="Test Item",
+            category=cls.category,
+            price=100,
+        )
+        cls.branch_schedule = Schedule.objects.create(title="Test Schedule")
+        cls.branch = Branch.objects.create(
+            schedule=cls.branch_schedule,
+            name_of_shop="Test Branch",
+            address="Test Address",
+            phone_number="+996700000000",
+            link_to_map="https://test.link",
+        )
+        cls.ingridient = Ingredient.objects.create(
+            name="Test Ingredient", measurement_unit="g", minimal_limit=100
+        )
+        cls.available_at_the_branch = AvailableAtTheBranch.objects.create(
+            ingredient=cls.ingridient, branch=cls.branch, quantity=100000
+        )
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def get_token(self, phone_number):
+        response = self.client.post(
+            path="/accounts/temporary-login/",
+            data={"phone_number": phone_number},
+        )
+        return response.data["access"]
+
+    def test_create_item(self):
+        """Test creating item by admin user"""
+        token = self.get_token("+996700000001")
+        self.client.credentials(HTTP_AUTHORIZATION="Bearer " + token)
+        data = {
+            "category": 1,
+            "name": "new item",
+            "description": "new item description",
+            "price": 100,
+            "is_available": True,
+            "composition": [
+                {
+                    "ingredient": 1,
+                    "quantity": 100,
+                }
+            ],
+        }
+        response = self.client.post(
+            path="/admin-panel/items/create/",
+            data=json.dumps(data),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Item.objects.count(), 2)
+        self.assertTrue(Item.objects.filter(name="new item").exists())
+        self.assertEqual(
+            Composition.objects.filter(item__name="new item").count(), 1
+        )
+        self.assertEqual(
+            Composition.objects.filter(item__name="new item").first().quantity, 100
+        )
+
+    def test_get_item_list(self):
+        """Test getting item list by admin user"""
+        token = self.get_token("+996700000001")
+        self.client.credentials(HTTP_AUTHORIZATION="Bearer " + token)
+        response = self.client.get(path="/admin-panel/items/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["name"], "Test Item")
+        self.assertEqual(response.data[0]["category"]["name"], "Test Category")
+        self.assertEqual(response.data[0]["price"], "100.00")
+
+    def test_update_item(self):
+        """Test updating item by admin user"""
+        token = self.get_token("+996700000001")
+        self.client.credentials(HTTP_AUTHORIZATION="Bearer " + token)
+        data = {
+            "category": 1,
+            "name": "new item",
+            "description": "new item description",
+            "price": 100,
+            "is_available": True,
+            "compositions": [
+                {
+                    "ingredient": 1,
+                    "quantity": 100,
+                }
+            ],
+        }
+        response = self.client.put(
+            path=f"/admin-panel/items/update/{self.item.id}/",
+            data=json.dumps(data),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Item.objects.get(id=self.item.id).name, "new item")
+        self.assertEqual(
+            Composition.objects.filter(item__name="new item").count(), 1
+        )
+        self.assertEqual(
+            Composition.objects.filter(item__name="new item").first().quantity, 100
+        )
+        self.assertEqual(
+            Composition.objects.filter(item__name="new item").first().ingredient.id,
+            1,
+        )
+        self.assertEqual(
+            Composition.objects.filter(item__name="new item").first().ingredient.name,
+            "Test Ingredient",
+        )
+
+    def test_delete_item(self):
+        """Test deleting item by admin user"""
+        token = self.get_token("+996700000001")
+        item_name = self.item.name
+        self.client.credentials(HTTP_AUTHORIZATION="Bearer " + token)
+        response = self.client.delete(
+            path=f"/admin-panel/items/destroy/{self.item.id}/",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(Item.objects.filter(id=self.item.id).exists())
+        self.assertFalse(Composition.objects.filter(item__name=item_name).exists())
+
+    def test_get_item(self):
+        """Test getting item by admin user"""
+        token = self.get_token("+996700000001")
+        self.client.credentials(HTTP_AUTHORIZATION="Bearer " + token)
+        response = self.client.get(
+            path=f"/admin-panel/items/{self.item.id}/",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["name"], "Test Item")
+        self.assertEqual(response.data["category"]["name"], "Test Category")
+        self.assertEqual(response.data["price"], "100.00")
