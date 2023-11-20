@@ -1,82 +1,71 @@
+# storage/urls.py
 from django.urls import path
-
-from apps.storage.views import (CreateCategoryView, CreateEmployeeView,
-                                CreateIngredientView, CreateItemView,
-                                DestroyCategoryView, EmployeeDestroyView,
-                                EmployeeDetailView, EmployeeListView,
-                                EmployeeUpdateView, IngredientDestroyView,
-                                IngredientDetailView, IngredientListView,
-                                IngredientQuantityUpdateView,
-                                InredientDestroyFromBranchView, ItemDetailView,
-                                ItemListView, ItemUpdateView, ListCategoryView,
-                                PutImageToItemView, ReadyMadeProductCreateView,
-                                ReadyMadeProductListView, ScheduleUpdateView,
-                                UpdateCategoryView, UpdateIngredientView)
+from .views import (
+    # Existing views
+    ListCategoryView,
+    CreateCategoryView,
+    DestroyCategoryView,
+    UpdateCategoryView,
+    CreateEmployeeView,
+    EmployeeListView,
+    EmployeeDetailView,
+    EmployeeUpdateView,
+    ScheduleUpdateView,
+    EmployeeDestroyView,
+    CreateIngredientView,
+    UpdateIngredientView,
+    IngredientDetailView,
+    IngredientListView,
+    IngredientDestroyView,
+    IngredientQuantityUpdateView,
+    InredientDestroyFromBranchView,
+    CreateItemView,
+    ItemListView,
+    ItemDetailView,
+    ItemUpdateView,
+    ReadyMadeProductCreateView,
+    ReadyMadeProductListView,
+    ReadyMadeProductDetailView,
+    PutImageToItemView,
+    # New views
+    AdditionalProductListView,
+    AdditionalProductDetailView,
+    CreateAdditionalProductView,
+    UpdateAdditionalProductView,
+    DeleteAdditionalProductView,
+)
 
 urlpatterns = [
-    path("categories/", ListCategoryView.as_view()),  # storage/categories/
-    path(
-        "categories/create/", CreateCategoryView.as_view()
-    ),  # storage/categories/create/
-    path(
-        "categories/destroy/<int:pk>/", DestroyCategoryView.as_view()
-    ),  # storage/categories/destroy/<int:pk>/
-    path(
-        "categories/update/<int:pk>/", UpdateCategoryView.as_view()
-    ),  # storage/categories/update/<int:pk>/
-    path(
-        "employees/create/", CreateEmployeeView.as_view()
-    ),  # storage/employees/create/
-    path("employees/", EmployeeListView.as_view()),  # storage/employees/
-    path(
-        "employees/<int:pk>/", EmployeeDetailView.as_view()
-    ),  # storage/employees/<int:pk>/
-    path(
-        "employees/update/<int:pk>/", EmployeeUpdateView.as_view()
-    ),  # storage/employees/update/<int:pk>/
-    path(
-        "employees/schedule/update/<int:pk>/", ScheduleUpdateView.as_view()
-    ),  # storage/employees/schedule/update/<int:pk>/
-    path(
-        "employees/destroy/<int:pk>/", EmployeeDestroyView.as_view()
-    ),  # storage/employees/destroy/<int:pk>/
-    path(
-        "ingredients/create/", CreateIngredientView.as_view()
-    ),  # storage/ingredients/create/
-    path(
-        "ingredients/update/<int:pk>/", UpdateIngredientView.as_view()
-    ),  # storage/ingredients/update/<int:pk>/
-    path(
-        "ingredients/<int:pk>/", IngredientDetailView.as_view()
-    ),  # storage/ingredients/<int:pk>/
-    path(
-        "ingredients/destroy/<int:pk>/", IngredientDestroyView.as_view()
-    ),  # storage/ingredients/destroy/<int:pk>/
-    path("ingredients/", IngredientListView.as_view()),  # storage/ingredients/
-    path(
-        "ingredient-quantity-update/<int:id>/",
-        IngredientQuantityUpdateView.as_view(),
-    ),  # storage/ingredient-quantity-update/<int:pk>/
-    path(
-        "ingredient-destroy-from-branch/<int:pk>/",
-        InredientDestroyFromBranchView.as_view(),
-    ),  # storage/ingredient-destroy-from-branch/<int:pk>/
-    path("items/create/", CreateItemView.as_view()),  # storage/items/create/
-    path("items/", ItemListView.as_view()),  # storage/items/
-    path("items/<int:pk>/", ItemDetailView.as_view()),  # storage/items/<int:pk>/
-    path(
-        "items/update/<int:pk>/", ItemUpdateView.as_view()
-    ),  # storage/items/update/<int:pk>/
-    path(
-        "ready-made-products/create/", ReadyMadeProductCreateView.as_view()
-    ),  # storage/ready-made-products/create/
-    path(
-        "ready-made-products/", ReadyMadeProductListView.as_view()
-    ),  # storage/ready-made-products/
-    path(
-        "ready-made-products/<int:pk>/", ReadyMadeProductListView.as_view()
-    ),  # storage/ready-made-products/<int:pk>/
-    path(
-        "put-image-to-item/<int:pk>/", PutImageToItemView.as_view()
-    ),  # storage/put-image-to-item/<int:pk>/
+    # Existing URL patterns
+    path("categories/", ListCategoryView.as_view(), name="category-list"),
+    path("categories/create/", CreateCategoryView.as_view(), name="category-create"),
+    path("categories/destroy/<int:pk>/", DestroyCategoryView.as_view(), name="category-destroy"),
+    path("categories/update/<int:pk>/", UpdateCategoryView.as_view(), name="category-update"),
+    path("employees/create/", CreateEmployeeView.as_view(), name="employee-create"),
+    path("employees/", EmployeeListView.as_view(), name="employee-list"),
+    path("employees/<int:pk>/", EmployeeDetailView.as_view(), name="employee-detail"),
+    path("employees/update/<int:pk>/", EmployeeUpdateView.as_view(), name="employee-update"),
+    path("employees/schedule/update/<int:pk>/", ScheduleUpdateView.as_view(), name="schedule-update"),
+    path("employees/destroy/<int:pk>/", EmployeeDestroyView.as_view(), name="employee-destroy"),
+    path("ingredients/create/", CreateIngredientView.as_view(), name="ingredient-create"),
+    path("ingredients/update/<int:pk>/", UpdateIngredientView.as_view(), name="ingredient-update"),
+    path("ingredients/<int:pk>/", IngredientDetailView.as_view(), name="ingredient-detail"),
+    path("ingredients/destroy/<int:pk>/", IngredientDestroyView.as_view(), name="ingredient-destroy"),
+    path("ingredients/", IngredientListView.as_view(), name="ingredient-list"),
+    path("ingredient-quantity-update/<int:id>/", IngredientQuantityUpdateView.as_view(), name="ingredient-quantity-update"),
+    path("ingredient-destroy-from-branch/<int:pk>/", InredientDestroyFromBranchView.as_view(), name="ingredient-destroy-from-branch"),
+    path("items/create/", CreateItemView.as_view(), name="item-create"),
+    path("items/", ItemListView.as_view(), name="item-list"),
+    path("items/<int:pk>/", ItemDetailView.as_view(), name="item-detail"),
+    path("items/update/<int:pk>/", ItemUpdateView.as_view(), name="item-update"),
+    path("ready-made-products/create/", ReadyMadeProductCreateView.as_view(), name="ready-made-product-create"),
+    path("ready-made-products/", ReadyMadeProductListView.as_view(), name="ready-made-product-list"),
+    path("ready-made-products/<int:pk>/", ReadyMadeProductDetailView.as_view(), name="ready-made-product-detail"),
+    path("put-image-to-item/<int:pk>/", PutImageToItemView.as_view(), name="put-image-to-item"),
+    # New URL patterns
+    path("additional-products/", AdditionalProductListView.as_view(), name="additional-product-list"),
+    path("additional-products/<int:pk>/", AdditionalProductDetailView.as_view(), name="additional-product-detail"),
+    path("additional-products/create/", CreateAdditionalProductView.as_view(), name="additional-product-create"),
+    path("additional-products/<int:pk>/update/", UpdateAdditionalProductView.as_view(), name="additional-product-update"),
+    path("additional-products/<int:pk>/delete/", DeleteAdditionalProductView.as_view(), name="additional-product-delete"),
 ]

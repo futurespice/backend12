@@ -1,12 +1,16 @@
 """
 Views for storage app
 """
+from rest_framework.permissions import IsAuthenticated
+
+from .models import Item, ReadyMadeProduct, AdditionalProduct, AvailableAdditionalProduct, ItemAdditionalProduct
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from .serializers import ItemSerializer, ReadyMadeProductSerializer, AdditionalProductSerializer, \
+    AvailableAdditionalProductSerializer, ItemAdditionalProductSerializer
 from apps.accounts.models import CustomUser
 from apps.storage.serializers import (AvailableAtTheBranchSerializer,
                                       CategorySerializer,
@@ -23,7 +27,8 @@ from apps.storage.serializers import (AvailableAtTheBranchSerializer,
                                       ReadyMadeProductSerializer,
                                       ScheduleUpdateSerializer,
                                       UpdateIngredientSerializer,
-                                      UpdateItemSerializer)
+                                      UpdateItemSerializer,
+                                      )
 from apps.storage.services import (delete_employee_schedule_by_employee,
                                    get_available_at_the_branch, get_categories,
                                    get_employees, get_ingrediants, get_items,
@@ -764,7 +769,6 @@ class ItemListView(generics.ListAPIView):
     List item view.
     """
 
-    queryset = get_items()
     serializer_class = ItemSerializer
 
     manual_response_schema = openapi.Schema(
@@ -836,6 +840,9 @@ class ItemListView(generics.ListAPIView):
         Get items method.
         """
         return super().get(request)
+
+    def get_queryset(self):
+        return Item.objects.filter(compositions__ingredient__minimal_limit__lte=0)
 
 
 class ItemDetailView(generics.RetrieveAPIView):
@@ -1029,8 +1036,71 @@ class ReadyMadeProductUpdateView(generics.UpdateAPIView):
 
 class ReadyMadeProductListView(generics.ListAPIView):
     """
-    List ready made product view.
+
     """
 
-    queryset = get_ready_made_products()
     serializer_class = ReadyMadeProductSerializer
+
+    def get_queryset(self):
+        return ReadyMadeProduct.objects.filter(ready_made_product_available_at_the_branch__quantity__gt=0)
+
+
+class AdditionalProductViewSet(viewsets.ModelViewSet):
+    queryset = AdditionalProduct.objects.all()
+    serializer_class = AdditionalProductSerializer
+
+
+class ItemAdditionalProductViewSet(viewsets.ModelViewSet):
+    queryset = ItemAdditionalProduct.objects.all()
+    serializer_class = ItemAdditionalProductSerializer
+
+
+class ReadyMadeProductDetailView(generics.RetrieveAPIView):
+    """
+    Retrieve details of a specific ReadyMadeProduct.
+    """
+    queryset = ReadyMadeProduct.objects.all()
+    serializer_class = ReadyMadeProductSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class AdditionalProductListView(generics.ListAPIView):
+    """
+    Retrieve a list of AdditionalProducts.
+    """
+    queryset = AdditionalProduct.objects.all()
+    serializer_class = AdditionalProductSerializer
+    permission_classes = [IsAuthenticated]
+
+class AdditionalProductDetailView(generics.RetrieveAPIView):
+    """
+    Retrieve details of a specific AdditionalProduct.
+    """
+    queryset = AdditionalProduct.objects.all()
+    serializer_class = AdditionalProductSerializer
+    permission_classes = [IsAuthenticated]
+
+class CreateAdditionalProductView(generics.CreateAPIView):
+    """
+    Create a new AdditionalProduct.
+    """
+    queryset = AdditionalProduct.objects.all()
+    serializer_class = AdditionalProductSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class UpdateAdditionalProductView(generics.UpdateAPIView):
+    """
+    Update a specific AdditionalProduct.
+    """
+    queryset = AdditionalProduct.objects.all()
+    serializer_class = AdditionalProductSerializer
+    permission_classes = [IsAuthenticated]
+
+class DeleteAdditionalProductView(generics.DestroyAPIView):
+    """
+    Delete a specific AdditionalProduct.
+    """
+    queryset = AdditionalProduct.objects.all()
+    serializer_class = AdditionalProductSerializer
+    permission_classes = [IsAuthenticated]

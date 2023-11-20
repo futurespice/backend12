@@ -7,7 +7,8 @@ from rest_framework import serializers
 from apps.accounts.models import CustomUser, EmployeeSchedule, EmployeeWorkdays
 from apps.storage.models import (AvailableAtTheBranch, Category, Composition,
                                  Ingredient, Item, ReadyMadeProduct,
-                                 ReadyMadeProductAvailableAtTheBranch)
+                                 ReadyMadeProductAvailableAtTheBranch, AdditionalProduct, AvailableAdditionalProduct,
+                                 ItemAdditionalProduct)
 
 
 # =====================================================================
@@ -369,6 +370,29 @@ class IngredientDetailSerializer(serializers.ModelSerializer):
         return representation
 
 
+class AdditionalProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdditionalProduct
+        fields = ["id", "name", "minimal_limit", "date_of_arrival"]
+
+
+class AvailableAdditionalProductSerializer(serializers.ModelSerializer):
+    branch = serializers.StringRelatedField()
+    additional_product = serializers.StringRelatedField()
+
+    class Meta:
+        model = AvailableAdditionalProduct
+        fields = ["id", "branch", "additional_product", "quantity"]
+
+
+class ItemAdditionalProductSerializer(serializers.ModelSerializer):
+    additional_product = AdditionalProductSerializer()
+
+    class Meta:
+        model = ItemAdditionalProduct
+        fields = ["id", "additional_product", "quantity"]
+
+
 class IngredientQuantityUpdateSerializer(serializers.ModelSerializer):
     """
     IngredientQuantityUpdate serializer.
@@ -463,25 +487,18 @@ class CreateItemSerializer(serializers.ModelSerializer):
 
 
 class ItemSerializer(serializers.ModelSerializer):
-    """
-    Item serializer.
-    """
-
-    category = CategorySerializer(read_only=True)
-    compositions = CompositionSerializer(many=True, read_only=True)
+    additional_products = ItemAdditionalProductSerializer(many=True, read_only=True)
 
     class Meta:
         model = Item
-        fields = [
-            "id",
-            "name",
-            "description",
-            "price",
-            "image",
-            "compositions",
-            "is_available",
-            "category",
-        ]
+        fields = ["id", "name", "category", "description", "price", "image", "is_available", "additional_products"]
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation["additional_products"] = ItemAdditionalProductSerializer(
+            ItemAdditionalProduct.objects.filter(item=instance), many=True
+        ).data
+        return representation
 
 
 class UpdateItemSerializer(serializers.ModelSerializer):
@@ -597,15 +614,18 @@ class CreateReadyMadeProductSerializer(serializers.ModelSerializer):
 
 
 class ReadyMadeProductSerializer(serializers.ModelSerializer):
-    """
-    ReadyMadeProduct serializer.
-    """
+    total_quantity = serializers.SerializerMethodField()
 
     class Meta:
         model = ReadyMadeProduct
-        fields = [
-            "id",
-            "name",
-            "minimal_limit",
-            "date_of_arrival",
-        ]
+        fields = ["id", "name", "minimal_limit", "date_of_arrival", "total_quantity"]
+
+    def get_total_quantity(self, instance):
+        # Рассчитаем общее количество готового продукта на всех филиалах
+        return instance.ready_made_product_available_at_the_branch.aggregate(total_quantity=models.Sum("quantity"))["total_quantity"] or 0
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Добавим поле is_available в представление
+        data['is_available'] = instance.is_available()
+        return data
