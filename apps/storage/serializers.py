@@ -608,4 +608,19 @@ class ReadyMadeProductSerializer(serializers.ModelSerializer):
             "name",
             "minimal_limit",
             "date_of_arrival",
+
+        ]
+
+
+class UpdateReadyMadeProductSerializer(serializers.ModelSerializer):
+    """
+    EditReadyMadeProduct serializer.
+    """
+
+    class Meta:
+        model = ReadyMadeProduct
+        fields = [
+            "id",
+            "name",
+            "minimal_limit",
         ]

@@ -89,7 +89,7 @@ class ReadyMadeProduct(models.Model):
     ReadyMadeProduct model.
     """
 
-    image = models.ImageField(upload_to="images")
+    image = models.ImageField(upload_to="images", null=True, blank=True)
     minimal_limit = models.DecimalField(max_digits=10, decimal_places=2)
     name = models.CharField(max_length=255)
     date_of_arrival = models.DateField(auto_now=True)

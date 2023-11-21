@@ -5,7 +5,7 @@ from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView
 from rest_framework.permissions import IsAdminUser
 
 from .models import Branch
-from .serializers import BranchCreateSerializer, BranchSerializer
+from .serializers import BranchCreateSerializer, BranchSerializer, PutImageSerializer
 
 
 class BranchListView(ListAPIView):
@@ -184,3 +184,23 @@ class BranchDetailView(generics.RetrieveAPIView):
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+
+
+class PutImageBranchView(UpdateAPIView):
+    queryset = Branch.objects.all()
+    serializer_class = PutImageSerializer
+    lookup_field = "id"
+
+    manual_request_schema = openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={"image": openapi.Schema(type=openapi.TYPE_FILE)},
+    )
+
+    @swagger_auto_schema(
+        operation_summary="Put image to branch",
+        operation_description="Use this method to put image to branch",
+        request_body=manual_request_schema,
+        responses={200: PutImageSerializer},
+    )
+    def put(self, request, *args, **kwargs):
+        return super().put(request, *args, **kwargs)

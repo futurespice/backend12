@@ -8,28 +8,38 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import CustomUser
-from apps.storage.serializers import (AvailableAtTheBranchSerializer,
-                                      CategorySerializer,
-                                      CreateIngredientSerializer,
-                                      CreateItemSerializer,
-                                      CreateReadyMadeProductSerializer,
-                                      EmployeeCreateSerializer,
-                                      EmployeeSerializer,
-                                      EmployeeUpdateSerializer,
-                                      IngredientDetailSerializer,
-                                      IngredientQuantityUpdateSerializer,
-                                      IngredientSerializer, ItemSerializer,
-                                      PutImageToItemSerializer,
-                                      ReadyMadeProductSerializer,
-                                      ScheduleUpdateSerializer,
-                                      UpdateIngredientSerializer,
-                                      UpdateItemSerializer)
-from apps.storage.services import (delete_employee_schedule_by_employee,
-                                   get_available_at_the_branch, get_categories,
-                                   get_employees, get_ingrediants, get_items,
-                                   get_ready_made_products,
-                                   get_specific_category,
-                                   get_specific_employee)
+from apps.storage.serializers import (
+    AvailableAtTheBranchSerializer,
+    CategorySerializer,
+    CreateIngredientSerializer,
+    CreateItemSerializer,
+    CreateReadyMadeProductSerializer,
+    EmployeeCreateSerializer,
+    EmployeeSerializer,
+    EmployeeUpdateSerializer,
+    IngredientDetailSerializer,
+    IngredientQuantityUpdateSerializer,
+    IngredientSerializer,
+    ItemSerializer,
+    PutImageToItemSerializer,
+    ReadyMadeProductSerializer,
+    ScheduleUpdateSerializer,
+    UpdateIngredientSerializer,
+    UpdateItemSerializer,
+    UpdateReadyMadeProductSerializer,
+    ReadyMadeProductAvailableAtTheBranchSerializer,
+)
+from apps.storage.services import (
+    delete_employee_schedule_by_employee,
+    get_available_at_the_branch,
+    get_categories,
+    get_employees,
+    get_ingrediants,
+    get_items,
+    get_ready_made_products,
+    get_specific_category,
+    get_specific_employee
+)
 
 
 # =====================================================================
@@ -1076,3 +1086,27 @@ class ReadyMadeProductDestroyView(generics.DestroyAPIView):
     queryset = get_ready_made_products()
     serializer_class = ReadyMadeProductSerializer
     lookup_field = "pk"
+
+
+
+
+class ReadyMadeProductDetailView(generics.RetrieveAPIView):
+    """
+    Ready made product detail view.
+    """
+    
+    queryset = get_ready_made_products()
+    serializer_class = ReadyMadeProductSerializer
+    lookup_field = "pk"
+
+
+class ReadyMadeProductQuantityUpdateView(generics.UpdateAPIView):
+    """
+    Class for updating ready made product quantity.
+    """
+
+    queryset = get_ready_made_products()
+    serializer_class = ReadyMadeProductAvailableAtTheBranchSerializer
+    permission_classes = [permissions.IsAdminUser]
+    lookup_field = "pk"
+

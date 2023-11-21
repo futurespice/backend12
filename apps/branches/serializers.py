@@ -98,3 +98,9 @@ class BranchCreateSerializer(serializers.ModelSerializer):
                         workday = workday_serializer.save(schedule=schedule)
 
         return branch
+
+
+class PutImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Branch
+        fields = ["image"]

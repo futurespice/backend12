@@ -19,20 +19,17 @@ from apps.storage.views import (
     ItemListView,
     ItemUpdateView,
     ListCategoryView,
+    ItemDestroyView,
     PutImageToItemView,
-    ReadyMadeProductCreateView,
-    ReadyMadeProductListView,
     ScheduleUpdateView,
     UpdateCategoryView,
     UpdateIngredientView,
-    ReadyMadeProductListView,
-    ReadyMadeProductCreateView,
-    ReadyMadeProductListView,
-    ReadyMadeProductCreateView,
-    ReadyMadeProductListView,
     ReadyMadeProductCreateView,
     ReadyMadeProductDestroyView,
-    ItemDestroyView,
+    ReadyMadeProductListView,
+    ReadyMadeProductDetailView,
+    ReadyMadeProductUpdateView,
+    ReadyMadeProductQuantityUpdateView,
 )
 
 # Category URLs
@@ -80,5 +77,7 @@ urlpatterns += [
     path("ready-made-products/", ReadyMadeProductListView.as_view()),
     path("ready-made-products/<int:pk>/", ReadyMadeProductListView.as_view()),
     path("ready-made-products/destroy/<int:pk>/", ReadyMadeProductDestroyView.as_view()),
-
+    path("ready-made-products/update/<int:pk>/", ReadyMadeProductUpdateView.as_view()),
+    path("ready-made-products/quantity-update/<int:id>/", ReadyMadeProductQuantityUpdateView.as_view()),
+    path("ready-made-products/<int:pk>/", ReadyMadeProductDetailView.as_view()),
 ]

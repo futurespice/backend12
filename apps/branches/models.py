@@ -9,6 +9,9 @@ class Schedule(models.Model):
     def __str__(self):
         return self.title
 
+    class Meta:
+        app_label = "branches"
+
 
 class Workdays(models.Model):
     WEEKDAYS = [

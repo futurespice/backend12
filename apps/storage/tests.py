@@ -11,8 +11,6 @@ from apps.storage.models import (AvailableAtTheBranch, Category, Ingredient,
                                  Item, ReadyMadeProduct, Composition)
 
 # ==================== Category Tests ==================== #
-
-
 # Category Model Tests
 class CategoryModelTest(TestCase):
     """Test Category model"""
@@ -841,7 +839,6 @@ class IngredientViewTest(TestCase):
 
 
 # ==================== Item Tests ==================== #
-# Item Model Tests
 class ItemModelTest(TestCase):
     """Test Item model"""
 
@@ -853,10 +850,12 @@ class ItemModelTest(TestCase):
             name="Test Item",
             category=cls.category,
             price=100,
+
         )
 
+
+
     def test_name_label(self):
-        """Test name label"""
         item = Item.objects.get(id=1)
         field_label = item._meta.get_field("name").verbose_name
         self.assertEquals(field_label, "name")
@@ -923,12 +922,12 @@ class ItemModelTest(TestCase):
 
 
 # Item View Tests
+
 class ItemViewTest(TestCase):
     """Test Item endpoints"""
 
     @classmethod
     def setUpTestData(cls):
-        # Common test data for all methods
         cls.user = User.objects.create(
             first_name="test",
             last_name="user",
@@ -937,6 +936,7 @@ class ItemViewTest(TestCase):
             password="testpassword",
             is_active=True,
         )
+
         cls.admin_user = User.objects.create(
             first_name="test",
             last_name="admin",
@@ -965,7 +965,8 @@ class ItemViewTest(TestCase):
             name="Test Ingredient", measurement_unit="g", minimal_limit=100
         )
         cls.available_at_the_branch = AvailableAtTheBranch.objects.create(
-            ingredient=cls.ingridient, branch=cls.branch, quantity=100000
+            ingredient=cls.ingridient, branch=cls.branch, quantity=100000,
+            description="Test Description",
         )
 
     def setUp(self):
