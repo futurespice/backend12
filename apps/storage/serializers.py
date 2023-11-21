@@ -624,11 +624,10 @@ class ReadyMadeProductSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "minimal_limit", "date_of_arrival", "total_quantity"]
 
     def get_total_quantity(self, instance):
-        # Рассчитаем общее количество готового продукта на всех филиалах
-        return instance.ready_made_product_available_at_the_branch.aggregate(total_quantity=models.Sum("quantity"))["total_quantity"] or 0
+        return instance.readymadeproductavailableatthebranch.aggregate(total_quantity=models.Sum("quantity"))["total_quantity"] or 0
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        # Добавим поле is_available в представление
+        data["total_quantity"] = self.get_total_quantity(instance)
         data['is_available'] = instance.is_available()
         return data

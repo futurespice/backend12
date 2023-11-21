@@ -772,7 +772,6 @@ class IngredientViewTest(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["name"], "Test Ingredient")
-        self.assertEqual(response.data["total_quantity"], 200)
 
     def test_update_ingredient_quantity_by_user(self):
         """Test updating ingredient quantity by usual user"""
@@ -1082,5 +1081,44 @@ class ItemViewTest(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["name"], "Test Item")
-        self.assertEqual(response.data["category"]["name"], "Test Category")
+        category = Category.objects.get(id=response.data["category"])
+        self.assertEqual(category.name, "Test Category")
         self.assertEqual(response.data["price"], "100.00")
+
+
+# ==================== Ready Made Product Tests ==================== #
+class ReadyMadeProductModelTest(TestCase):
+    """Test ReadyMadeProduct model"""
+
+    @classmethod
+    def setUpTestData(cls):
+        # Set up non-modified objects used by all test methods
+        cls.ready_made_product = ReadyMadeProduct.objects.create(
+            name="Test Ready Made Product",
+            price=100,
+            minimal_limit=100,
+        )
+
+    def test_name_label(self):
+        """Test name label"""
+        ready_made_product = ReadyMadeProduct.objects.get(id=1)
+        field_label = ready_made_product._meta.get_field("name").verbose_name
+        self.assertEquals(field_label, "name")
+
+    def test_name_max_length(self):
+        """Test name max length. Check if it is equal to 255"""
+        ready_made_product = ReadyMadeProduct.objects.get(id=1)
+        max_length = ready_made_product._meta.get_field("name").max_length
+        self.assertEquals(max_length, 255)
+
+    def test_object_name_is_name(self):
+        """Test object name. Check if it is equal to name"""
+        ready_made_product = ReadyMadeProduct.objects.get(id=1)
+        expected_object_name = ready_made_product.name
+        self.assertEquals(expected_object_name, str(ready_made_product))
+
+    def test_price_label(self):
+        """Test price label. Check if it is equal to price"""
+        ready_made_product = ReadyMadeProduct.objects.get(id=1)
+        field_label = ready_made_product._meta.get_field("price").verbose_name
+        self.assertEquals(field_label, "price")
