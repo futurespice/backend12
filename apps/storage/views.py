@@ -1,36 +1,29 @@
 """
 Views for storage app
 """
-from rest_framework.permissions import IsAuthenticated
-
-from .models import Item, ReadyMadeProduct, AdditionalProduct, AvailableAdditionalProduct, ItemAdditionalProduct
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import generics, permissions, viewsets
+from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from apps.accounts.models import CustomUser
-from apps.storage.serializers import (
-    AvailableAtTheBranchSerializer,
-    CategorySerializer,
-    CreateIngredientSerializer,
-    CreateItemSerializer,
-    CreateReadyMadeProductSerializer,
-    EmployeeCreateSerializer,
-    EmployeeSerializer,
-    EmployeeUpdateSerializer,
-    IngredientDetailSerializer,
-    IngredientQuantityUpdateSerializer,
-    IngredientSerializer, ItemSerializer,
-    PutImageToItemSerializer,
-    ReadyMadeProductSerializer,
-    ScheduleUpdateSerializer,
-    UpdateIngredientSerializer,
-    UpdateItemSerializer,
-    AdditionalProductSerializer,
-    ItemAdditionalProductSerializer
-)
 
+from apps.accounts.models import CustomUser
+from apps.storage.serializers import (AvailableAtTheBranchSerializer,
+                                      CategorySerializer,
+                                      CreateIngredientSerializer,
+                                      CreateItemSerializer,
+                                      CreateReadyMadeProductSerializer,
+                                      EmployeeCreateSerializer,
+                                      EmployeeSerializer,
+                                      EmployeeUpdateSerializer,
+                                      IngredientDetailSerializer,
+                                      IngredientQuantityUpdateSerializer,
+                                      IngredientSerializer, ItemSerializer,
+                                      PutImageToItemSerializer,
+                                      ReadyMadeProductSerializer,
+                                      ScheduleUpdateSerializer,
+                                      UpdateIngredientSerializer,
+                                      UpdateItemSerializer)
 from apps.storage.services import (delete_employee_schedule_by_employee,
                                    get_available_at_the_branch, get_categories,
                                    get_employees, get_ingrediants, get_items,
@@ -771,6 +764,7 @@ class ItemListView(generics.ListAPIView):
     List item view.
     """
 
+    queryset = get_items()
     serializer_class = ItemSerializer
 
     manual_response_schema = openapi.Schema(
@@ -842,42 +836,6 @@ class ItemListView(generics.ListAPIView):
         Get items method.
         """
         return super().get(request)
-
-    def get_queryset(self):
-        return Item.objects.filter(compositions__ingredient__minimal_limit__lte=0)
-
-
-class ItemDestroyView(generics.DestroyAPIView):
-    """
-    Delete item view.
-    """
-
-    queryset = get_items()
-    serializer_class = ItemSerializer
-    lookup_field = "pk"
-    permission_classes = [permissions.IsAdminUser]
-
-    manual_response_schema = openapi.Schema(
-        type=openapi.TYPE_OBJECT,
-        properties={
-            "message": openapi.Schema(type=openapi.TYPE_STRING),
-        },
-    )
-
-    @swagger_auto_schema(
-        operation_summary="Delete item",
-        operation_description="Use this method to delete an item. Only admins can delete items",
-        responses={
-            200: openapi.Response("Item deleted successfully", manual_response_schema)
-        },
-    )
-    def delete(self, request, pk):
-        """
-        Delete item method.
-        """
-        item = get_items().filter(pk=pk).first()
-        item.delete()
-        return Response({"message": "Item deleted successfully"}, status=200)
 
 
 class ItemDetailView(generics.RetrieveAPIView):
@@ -1015,6 +973,38 @@ class PutImageToItemView(generics.UpdateAPIView):
         return super().put(request, *args, **kwargs)
 
 
+class ItemDestroyView(generics.DestroyAPIView):
+    """
+    Delete item view.
+    """
+
+    queryset = get_items()
+    serializer_class = ItemSerializer
+    lookup_field = "pk"
+
+    manual_response_schema = openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "message": openapi.Schema(type=openapi.TYPE_STRING),
+        },
+    )
+
+    @swagger_auto_schema(
+        operation_summary="Delete item",
+        operation_description="Use this method to delete an item. Only admins can delete items",
+        responses={
+            200: openapi.Response("Item deleted successfully", manual_response_schema)
+        },
+    )
+    def delete(self, request, pk):
+        """
+        Delete item method.
+        """
+        item = get_items().filter(pk=pk).first()
+        item.delete()
+        return Response({"message": "Item deleted successfully"}, status=200)
+
+
 # =====================================================================
 # READY MADE PRODUCTS VIEWS
 # =====================================================================
@@ -1065,7 +1055,6 @@ class ReadyMadeProductUpdateView(generics.UpdateAPIView):
     """
 
     queryset = get_ready_made_products()
-    
     serializer_class = CreateReadyMadeProductSerializer
     lookup_field = "pk"
 
@@ -1074,81 +1063,16 @@ class ReadyMadeProductListView(generics.ListAPIView):
     """
     List ready made product view.
     """
+
     queryset = get_ready_made_products()
     serializer_class = ReadyMadeProductSerializer
 
 
-class ReadyMadeProductDetailView(generics.RetrieveAPIView):
-    """
-    Retrieve details of a specific ReadyMadeProduct.
-    """
-    queryset = ReadyMadeProduct.objects.all()
-    serializer_class = ReadyMadeProductSerializer
-    permission_classes = [IsAuthenticated]
-
-
 class ReadyMadeProductDestroyView(generics.DestroyAPIView):
     """
-    Delete a specific ReadyMadeProduct.
+    Delete ready made product view.
     """
-    queryset = ReadyMadeProduct.objects.all()
+
+    queryset = get_ready_made_products()
     serializer_class = ReadyMadeProductSerializer
-    permission_classes = [IsAuthenticated, permissions.IsAdminUser]
-
-
-# =====================================================================
-# ADDITIONAL PRODUCT VIEWS
-# =====================================================================
-class AdditionalProductViewSet(viewsets.ModelViewSet):
-    queryset = AdditionalProduct.objects.all()
-    serializer_class = AdditionalProductSerializer
-
-
-class ItemAdditionalProductViewSet(viewsets.ModelViewSet):
-    queryset = ItemAdditionalProduct.objects.all()
-    serializer_class = ItemAdditionalProductSerializer
-
-
-class AdditionalProductListView(generics.ListAPIView):
-    """
-    Retrieve a list of AdditionalProducts.
-    """
-    queryset = AdditionalProduct.objects.all()
-    serializer_class = AdditionalProductSerializer
-    permission_classes = [IsAuthenticated]
-
-
-class AdditionalProductDetailView(generics.RetrieveAPIView):
-    """
-    Retrieve details of a specific AdditionalProduct.
-    """
-    queryset = AdditionalProduct.objects.all()
-    serializer_class = AdditionalProductSerializer
-    permission_classes = [IsAuthenticated]
-
-
-class CreateAdditionalProductView(generics.CreateAPIView):
-    """
-    Create a new AdditionalProduct.
-    """
-    queryset = AdditionalProduct.objects.all()
-    serializer_class = AdditionalProductSerializer
-    permission_classes = [IsAuthenticated]
-
-
-class UpdateAdditionalProductView(generics.UpdateAPIView):
-    """
-    Update a specific AdditionalProduct.
-    """
-    queryset = AdditionalProduct.objects.all()
-    serializer_class = AdditionalProductSerializer
-    permission_classes = [IsAuthenticated]
-
-
-class DeleteAdditionalProductView(generics.DestroyAPIView):
-    """
-    Delete a specific AdditionalProduct.
-    """
-    queryset = AdditionalProduct.objects.all()
-    serializer_class = AdditionalProductSerializer
-    permission_classes = [IsAuthenticated]
+    lookup_field = "pk"

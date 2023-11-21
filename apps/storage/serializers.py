@@ -7,8 +7,7 @@ from rest_framework import serializers
 from apps.accounts.models import CustomUser, EmployeeSchedule, EmployeeWorkdays
 from apps.storage.models import (AvailableAtTheBranch, Category, Composition,
                                  Ingredient, Item, ReadyMadeProduct,
-                                 ReadyMadeProductAvailableAtTheBranch, AdditionalProduct, AvailableAdditionalProduct,
-                                 ItemAdditionalProduct)
+                                 ReadyMadeProductAvailableAtTheBranch)
 
 
 # =====================================================================
@@ -306,7 +305,6 @@ class IngredientSerializer(serializers.ModelSerializer):
         total_quantity = AvailableAtTheBranch.objects.filter(
             ingredient=instance
         ).aggregate(total_quantity=models.Sum("quantity"))["total_quantity"]
-        
         if total_quantity is not None:
             representation["total_quantity"] = round(total_quantity / 1000, 2) if instance.measurement_unit in ["kg", "l"] else total_quantity
         else:
@@ -369,29 +367,6 @@ class IngredientDetailSerializer(serializers.ModelSerializer):
             AvailableAtTheBranch.objects.filter(ingredient=instance), many=True
         ).data
         return representation
-
-
-class AdditionalProductSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AdditionalProduct
-        fields = ["id", "name", "minimal_limit", "date_of_arrival"]
-
-
-class AvailableAdditionalProductSerializer(serializers.ModelSerializer):
-    branch = serializers.StringRelatedField()
-    additional_product = serializers.StringRelatedField()
-
-    class Meta:
-        model = AvailableAdditionalProduct
-        fields = ["id", "branch", "additional_product", "quantity"]
-
-
-class ItemAdditionalProductSerializer(serializers.ModelSerializer):
-    additional_product = AdditionalProductSerializer()
-
-    class Meta:
-        model = ItemAdditionalProduct
-        fields = ["id", "additional_product", "quantity"]
 
 
 class IngredientQuantityUpdateSerializer(serializers.ModelSerializer):
@@ -488,18 +463,25 @@ class CreateItemSerializer(serializers.ModelSerializer):
 
 
 class ItemSerializer(serializers.ModelSerializer):
-    additional_products = ItemAdditionalProductSerializer(many=True, read_only=True)
+    """
+    Item serializer.
+    """
+
+    category = CategorySerializer(read_only=True)
+    compositions = CompositionSerializer(many=True, read_only=True)
 
     class Meta:
         model = Item
-        fields = ["id", "name", "category", "description", "price", "image", "is_available", "additional_products"]
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation["additional_products"] = ItemAdditionalProductSerializer(
-            ItemAdditionalProduct.objects.filter(item=instance), many=True
-        ).data
-        return representation
+        fields = [
+            "id",
+            "name",
+            "description",
+            "price",
+            "image",
+            "compositions",
+            "is_available",
+            "category",
+        ]
 
 
 class UpdateItemSerializer(serializers.ModelSerializer):
@@ -507,7 +489,7 @@ class UpdateItemSerializer(serializers.ModelSerializer):
     UpdateItem serializer.
     """
 
-    compositions = CompositionSerializer(many=True)
+    composition = CompositionSerializer(many=True)
 
     class Meta:
         model = Item
@@ -518,21 +500,19 @@ class UpdateItemSerializer(serializers.ModelSerializer):
             "description",
             "price",
             "image",
-            "compositions",
+            "composition",
             "is_available",
         ]
 
     def update(self, instance, validated_data):
         """
-        Update item and compositions of item.
+        Update item and composition of item.
         """
-        composition_data = validated_data.pop("compositions", [])
+        composition_data = validated_data.pop("composition", [])
         instance = super().update(instance, validated_data)
 
-        # Delete old compositions
-        Composition.objects.filter(item=instance).delete()
+        instance.composition.all().delete()
 
-        # Create new compositions
         for composition in composition_data:
             Composition.objects.create(item=instance, **composition)
 
@@ -617,17 +597,15 @@ class CreateReadyMadeProductSerializer(serializers.ModelSerializer):
 
 
 class ReadyMadeProductSerializer(serializers.ModelSerializer):
-    total_quantity = serializers.SerializerMethodField()
+    """
+    ReadyMadeProduct serializer.
+    """
 
     class Meta:
         model = ReadyMadeProduct
-        fields = ["id", "name", "minimal_limit", "date_of_arrival", "total_quantity"]
-
-    def get_total_quantity(self, instance):
-        return instance.readymadeproductavailableatthebranch.aggregate(total_quantity=models.Sum("quantity"))["total_quantity"] or 0
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data["total_quantity"] = self.get_total_quantity(instance)
-        data['is_available'] = instance.is_available()
-        return data
+        fields = [
+            "id",
+            "name",
+            "minimal_limit",
+            "date_of_arrival",
+        ]

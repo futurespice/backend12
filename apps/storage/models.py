@@ -12,7 +12,7 @@ class Category(models.Model):
     """
 
     name = models.CharField(max_length=255)
-    image_category = models.ImageField(upload_to="images", null=True, blank=True)
+    image = models.ImageField(upload_to="images", null=True, blank=True)
 
     def __str__(self):
         return f"{self.name}"
@@ -30,9 +30,9 @@ class Item(models.Model):
     image = models.ImageField(upload_to="images", null=True, blank=True)
     is_available = models.BooleanField(default=True)
 
-
     def __str__(self):
         return f"{self.name}"
+
 
 class Ingredient(models.Model):
     """
@@ -58,17 +58,23 @@ class Ingredient(models.Model):
 
 
 class Composition(models.Model):
+    """
+    Composition model.
+    """
+
     item = models.ForeignKey(
         Item,
         on_delete=models.CASCADE,
         related_name="compositions",
+        related_query_name="composition",
         null=True,
         blank=True,
     )
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        related_name="compositions_ingridients",
+        related_name="compositions",
+        related_query_name="composition",
         null=True,
         blank=True,
     )
@@ -116,32 +122,3 @@ class ReadyMadeProductAvailableAtTheBranch(models.Model):
 
     def __str__(self):
         return f"{self.branch.address} - {self.ready_made_product.name}"
-
-
-class AdditionalProduct(models.Model):
-    image = models.ImageField(upload_to="images")
-    minimal_limit = models.DecimalField(max_digits=10, decimal_places=2)
-    name = models.CharField(max_length=255)
-    date_of_arrival = models.DateField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.name}"
-
-
-class AvailableAdditionalProduct(models.Model):
-    branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
-    additional_product = models.ForeignKey(AdditionalProduct, on_delete=models.CASCADE)
-    quantity = models.DecimalField(max_digits=10, decimal_places=2)
-
-    def __str__(self):
-        return f"{self.branch.address} - {self.additional_product.name}"
-
-
-
-class ItemAdditionalProduct(models.Model):
-    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="additional_products")
-    additional_product = models.ForeignKey(AdditionalProduct, on_delete=models.CASCADE)
-    quantity = models.DecimalField(max_digits=10, decimal_places=2)
-
-    def __str__(self):
-        return f"{self.item.name} - {self.additional_product.name}"
