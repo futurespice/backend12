@@ -28,6 +28,7 @@ urlpatterns = [
     path("accounts/", include("apps.accounts.urls")),
     path("admin-panel/", include("apps.storage.urls")),
     path("branches/", include("apps.branches.urls")),
+    path("menu/", include("menu.urls")),
     # Swagger
     path(
         "swagger<format>/", schema_view.without_ui(cache_timeout=0), name="schema-json"
