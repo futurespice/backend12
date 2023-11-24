@@ -489,33 +489,35 @@ class UpdateItemSerializer(serializers.ModelSerializer):
     UpdateItem serializer.
     """
 
-    composition = CompositionSerializer(many=True)
+    compositions = CompositionSerializer(many=True)
+    category_id = serializers.IntegerField(write_only=True)
 
     class Meta:
         model = Item
         fields = [
             "id",
-            "category",
             "name",
             "description",
             "price",
             "image",
-            "composition",
+            "compositions",
             "is_available",
+            "category_id",
         ]
 
     def update(self, instance, validated_data):
         """
-        Update item and composition of item.
+        Update item.
         """
-        composition_data = validated_data.pop("composition", [])
-        instance = super().update(instance, validated_data)
-
-        instance.composition.all().delete()
-
-        for composition in composition_data:
-            Composition.objects.create(item=instance, **composition)
-
+        instance.name = validated_data.get("name", instance.name)
+        instance.description = validated_data.get("description", instance.description)
+        instance.price = validated_data.get("price", instance.price)
+        instance.image = validated_data.get("image", instance.image)
+        instance.is_available = validated_data.get("is_available", instance.is_available)
+        instance.category = Category.objects.get(
+            id=validated_data.get("category_id", instance.category.id)
+        )
+        instance.save()
         return instance
 
 
@@ -611,6 +613,29 @@ class ReadyMadeProductSerializer(serializers.ModelSerializer):
 
         ]
 
+    def to_representation(self, instance):
+        """
+        Create ready-made product and available at the branch representation.
+        """
+        representation = super().to_representation(instance)
+        representation[
+            "available_at_branches"
+        ] = ReadyMadeProductAvailableAtTheBranchSerializer(
+            ReadyMadeProductAvailableAtTheBranch.objects.filter(
+                ready_made_product=instance
+            ),
+            many=True,
+        ).data
+        representation["total_quantity"] = (
+            ReadyMadeProductAvailableAtTheBranch.objects.filter(
+                ready_made_product=instance
+            ).aggregate(total_quantity=models.Sum("quantity"))["total_quantity"]
+            or 0
+        )
+        representation["date_of_arrival"] = instance.date_of_arrival.strftime(
+            "%Y-%m-%d"
+        )
+        return representation
 
 class UpdateReadyMadeProductSerializer(serializers.ModelSerializer):
     """

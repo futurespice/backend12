@@ -52,7 +52,11 @@ INSTALLED_APPS = [
     "apps.storage",
     "apps.branches",
     "apps.accounts",
+<<<<<<< HEAD
     "menu",
+=======
+    "apps.menu"
+>>>>>>> 2eab6ba87d0dc6901eb6a82cbc97a66dc6a945bf
 ]
 
 MIDDLEWARE = [
@@ -70,6 +74,8 @@ ROOT_URLCONF = "config.urls"
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_HEADERS = "*"
+BASE_URL_INFOBIP = config("BASE_URL_INFOBIP")
+API_KEY_INFOBIP = config("API_KEY_INFOBIP")
 
 TEMPLATES = [
     {

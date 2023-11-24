@@ -8,6 +8,7 @@ import jwt
 from django.conf import settings
 from django.utils import timezone
 from twilio.rest import Client
+from utils.infobip import send_verification_phone_number
 
 from apps.accounts.models import CustomUser, PhoneNumberVerification
 
@@ -26,19 +27,19 @@ def send_phone_number_verification(user_id):
     return verification
 
 
-def send_verification_phone_number(code, phone_number):
-    """
-    Send verification code to user phone number
-    """
-    client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-    print(f"Отправка кода подтверждения на номер {phone_number}. Код: {code}")
-    message = client.messages.create(
-        to=f"{phone_number}",
-        from_=settings.TWILIO_SERVICE_SID,
-        body=f"Ваш код: {code}",
-    )
+# def send_verification_phone_number(code, phone_number):
+#     """
+#     Send verification code to user phone number
+#     """
+#     client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+#     print(f"Отправка кода подтверждения на номер {phone_number}. Код: {code}")
+#     message = client.messages.create(
+#         to=f"{phone_number}",
+#         from_=settings.TWILIO_SERVICE_SID,
+#         body=f"Ваш код: {code}",
+#     )
 
-    return message.sid
+#     return message.sid
 
 
 def generate_code():

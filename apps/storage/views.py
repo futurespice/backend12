@@ -930,29 +930,19 @@ class ItemUpdateView(generics.UpdateAPIView):
 
     queryset = get_items()
     serializer_class = UpdateItemSerializer
-    lookup_field = "pk"
 
-    manual_request_schema = openapi.Schema(
-        type=openapi.TYPE_OBJECT,
-        properties={
-            "category": openapi.Schema(type=openapi.TYPE_STRING),
-            "name": openapi.Schema(type=openapi.TYPE_STRING),
-            "description": openapi.Schema(type=openapi.TYPE_STRING),
-            "price": openapi.Schema(type=openapi.TYPE_NUMBER),
-            "is_available": openapi.Schema(type=openapi.TYPE_BOOLEAN),
-            "composition": openapi.Schema(
-                type=openapi.TYPE_ARRAY,
-                items=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        "ingredient": openapi.Schema(type=openapi.TYPE_STRING),
-                        "quantity": openapi.Schema(type=openapi.TYPE_NUMBER),
-                    },
-                ),
+    @swagger_auto_schema(
+        operation_description="Update an Item",
+        request_body=UpdateItemSerializer,
+        manual_parameters=[
+            openapi.Parameter(
+                'id', openapi.IN_PATH, description="ID of the item to be updated",
+                type=openapi.TYPE_INTEGER
             ),
-            "image": openapi.Schema(type=openapi.TYPE_FILE),
-        },
+        ]
     )
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
 
 
 class PutImageToItemView(generics.UpdateAPIView):
