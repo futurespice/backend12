@@ -1077,7 +1077,6 @@ class ItemViewTest(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(Item.objects.filter(id=self.item.id).exists())
-<<<<<<< HEAD
         self.assertFalse(Composition.objects.filter(item__name=item_name).exists())
 
     def test_get_item(self):
@@ -1130,7 +1129,6 @@ class ReadyMadeProductModelTest(TestCase):
         ready_made_product = ReadyMadeProduct.objects.get(id=1)
         field_label = ready_made_product._meta.get_field("price").verbose_name
         self.assertEquals(field_label, "price")
-=======
 
     def test_get_item_list(self):
         """Test getting item list by admin user"""
@@ -1189,4 +1187,4 @@ class ReadyMadeProductModelTest(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(Item.objects.filter(name="new item").count(), 1)
->>>>>>> 2eab6ba87d0dc6901eb6a82cbc97a66dc6a945bf
+

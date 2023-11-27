@@ -1,4 +1,7 @@
-from django.db.models import Sum, F
+from django.contrib.sessions.backends.db import SessionStore
+from django.db.models import Sum, F, Q
+import  re
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -6,130 +9,94 @@ from rest_framework import status
 from apps.branches.models import Branch
 from apps.branches.serializers import BranchSerializer
 from apps.storage.models import Item, Category, Composition, AvailableAtTheBranch
-from apps.storage.serializers import ItemSerializer, CategorySerializer, CompositionSerializer
-import random
+from apps.storage.serializers import (
+    ItemSerializer,
+    CompositionSerializer,
+    ReadyMadeProductSerializer,
+)
 from apps.accounts.models import CustomUser
-
-from .serializers import ChangeBranchSerializer
-
+from drf_yasg import openapi
+from .serializers import *
+from rest_framework.decorators import api_view
+from .models import *
+from django.contrib.sessions.models import Session
 
 class ChooseBranchView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     serializer_class = ChangeBranchSerializer
+
+    def get(self, request):
+        branches = [branch.name_of_shop for branch in Branch.objects.all()]
+        return Response({'branches': branches})
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'branch_name': openapi.Schema(type=openapi.TYPE_STRING, description='Название филиала')
+            }
+        )
+    )
 
     def post(self, request):
         user = request.user
-        branch_id = request.data["branch_id"]
-        user = CustomUser.objects.get(id=user.id)
-        user.branch = Branch.objects.filter(id=branch_id).first()
+        branch_name = request.data.get("branch_name")
+        user.branch = Branch.objects.filter(name_of_shop=branch_name).first()
         user.save()
-        return Response({'message':f'{user.branch.name_of_shop}'})
+
+        # Сохраняем информацию о выбранном филиале в сессии
+        session_key = request.session.session_key
+        if not session_key:
+            request.session.save()
+
+        Session.objects.filter(session_key=session_key).update(data={'branch_id': user.branch.id})
+
+        return Response({'message': f'Выбран филиал: {user.branch.name_of_shop}'}, status=status.HTTP_200_OK)
 
 
-class SearchProductsView(generics.ListAPIView):
+class SearchProductsView(APIView):
     serializer_class = ItemSerializer
 
-    def get_queryset(self):
-        branch_id = self.kwargs['branch_id']
-        available_items = self.get_available_items(branch_id)
-        return available_items
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter('product_name', openapi.IN_QUERY, type=openapi.TYPE_STRING, description='Название продукта'),
+        ]
+    )
+    def get(self, request):
+        try:
+            product_name = request.query_params.get('product_name', '')
+            if not (1 <= len(product_name) <= 100 and re.match("^[а-яА-Я\s.,+\-!0-9]+$", product_name)):
+                return Response({'error': 'Invalid input for product_name'}, status=status.HTTP_400_BAD_REQUEST)
 
-    def get_available_items(self, branch_id):
-        items_requirements = Composition.objects.values(
-            'item_id',
-            'ingredient_id',
-            'quantity'
-        )
+            # Используем branch_id из сессии
+            session_key = request.session.session_key
+            branch_id = Session.objects.get(session_key=session_key).get_decoded().get('branch_id')
 
-        available_quantities = AvailableAtTheBranch.objects.filter(
-            branch_id=branch_id
-        ).values(
-            'ingredient_id'
-        ).annotate(
-            total_quantity=Sum('quantity')
-        )
+            # Выбираем только необходимые поля
+            queryset = Item.objects.filter(
+                category_id=branch_id
+            ).values('name', 'title', 'price', 'image')
 
-        available_dict = {a['ingredient_id']: a['total_quantity'] for a in available_quantities}
+            if product_name:
+                search_query = Q(name__icontains=product_name) | Q(description__icontains=product_name) | Q(
+                    category__name__icontains=product_name)
+                queryset = queryset.filter(search_query)
 
-        available_items = set()
-        for requirement in items_requirements:
-            ingredient_id = requirement['ingredient_id']
-            required_quantity = requirement['quantity']
-            available_quantity = available_dict.get(ingredient_id, 0)
+            return Response(queryset, status=status.HTTP_200_OK)
 
-            if available_quantity >= required_quantity:
-                available_items.add(requirement['item_id'])
-
-        return Item.objects.filter(id__in=available_items)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class CategoriesListView(generics.ListAPIView):
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
-
-
-class ProductsInCategoryView(generics.ListAPIView):
-    serializer_class = CompositionSerializer
+class PopularItemsView(generics.ListAPIView):
+    serializer_class = PopularItemSerializer
 
     def get_queryset(self):
-        category_id = self.kwargs['category_id']
-        queryset = Composition.objects.filter(item__category_id=category_id)
+        # Получаем популярные продукты по количеству заказов
+        queryset = Item.objects.filter(is_available=True).order_by('-orders_count')[:5]
         return queryset
 
-
-class ProductInfoView(generics.RetrieveAPIView):
-    queryset = Item.objects.all()
-    serializer_class = ItemSerializer
-    lookup_field = 'pk'
-
-    def get_nice_addition(self, item):
-        categories = Category.objects.all()
-        nice_addition_items = []
-
-        for category in categories:
-            if item.category != category:
-                items_in_category = Item.objects.filter(category=category)
-                if items_in_category.exists():
-                    nice_addition_items.append(random.choice(items_in_category))
-
-        serializer = ItemSerializer(nice_addition_items, many=True)
-        return serializer.data
-
-    def get_similar_items(self, item, num_items=4):
-        # Получаем продукты из текущей категории, исключая текущий продукт
-        similar_items = Item.objects.filter(category=item.category).exclude(id=item.id)
-
-        # Получаем случайные продукты из текущей категории
-        if similar_items.count() > num_items:
-            similar_items = random.sample(list(similar_items), num_items)
-
-        serializer = ItemSerializer(similar_items, many=True)
-        return serializer.data
-
-    def get(self, request, *args, **kwargs):
-        response = super().get(request, *args, **kwargs)
-        item = self.get_object()
-
-        # Увеличиваем счетчик просмотров
-        item.views = F('views') + 1
-        item.save()
-
-        # Получаем приятное дополнение
-        nice_addition = self.get_nice_addition(item)
-
-        # Получаем похожие продукты
-        similar_items = self.get_similar_items(item)
-
-        # Добавляем информацию в ответ
-        response.data['nice_addition'] = nice_addition
-        response.data['similar_items'] = similar_items
-
-        return response
-
-
-class CheckIngredientsView(APIView):
-    def get(self, request, item_id):
-        item = Item.objects.get(pk=item_id)
-        # Implement logic to check if there are enough ingredients
-        # Return appropriate response
-        return Response({"message": "Product is available"}, status=status.HTTP_200_OK)
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data)
