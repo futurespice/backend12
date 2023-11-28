@@ -1,10 +1,12 @@
 from django.urls import path
-from .views import ChooseBranchView, SearchProductsView, PopularItemsView
+from .views import ChooseBranchView, PopularItemsListView, BranchCategoriesListView, CategoryProductsListView
 
+app_name = 'menu'
 
 urlpatterns = [
     path('choose-branch/', ChooseBranchView.as_view(), name='choose-branch'),
-    path('search-products/<int:branch_id>', SearchProductsView.as_view(), name='search-products'),
-    path('popular-items/', PopularItemsView.as_view(), name='popular-items')
-    # Добавьте другие необходимые пути
+    path('popular-items/<str:branch_name>/', PopularItemsListView.as_view(), name='popular-items'),
+    path('branch-categories/<str:branch_name>/', BranchCategoriesListView.as_view(), name='branch-categories'),
+    path('category-products/<str:branch_name>/<str:category_name>/', CategoryProductsListView.as_view(), name='category-products'),
+    # Другие URL-маршруты вашего приложения
 ]
